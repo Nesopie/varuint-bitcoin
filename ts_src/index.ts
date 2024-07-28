@@ -1,12 +1,21 @@
 'use strict'
+
+import * as tools from 'uint8array-tools'
+
 // Number.MAX_SAFE_INTEGER
 const MAX_SAFE_INTEGER = 9007199254740991
 
-function checkUInt53 (n: number): void {
-  if (n < 0 || n > MAX_SAFE_INTEGER || n % 1 !== 0) throw new RangeError('value out of range')
+function checkUInt53 (n: bigint): void {
+  if (n < 0 || n > MAX_SAFE_INTEGER || n % 1n !== 0n) {
+    throw new RangeError('value out of range')
+  }
 }
 
-export function encode (n: number, buffer?: Uint8Array, offset?: number): { buffer: Uint8Array, bytes: number } {
+export function encode (
+  n: bigint,
+  buffer?: Uint8Array,
+  offset?: number
+): { buffer: Uint8Array, bytes: number } {
   checkUInt53(n)
 
   if (offset === undefined) offset = 0
@@ -19,34 +28,27 @@ export function encode (n: number, buffer?: Uint8Array, offset?: number): { buff
 
   // 8 bit
   if (n < 0xfd) {
-    buffer.set([n], offset)
+    buffer.set([Number(n)], offset)
     bytes = 1
 
-  // 16 bit
+    // 16 bit
   } else if (n <= 0xffff) {
-    const dataview = new DataView(new ArrayBuffer(2))
-    dataview.setUint16(0, n, true)
     buffer.set([0xfd], offset)
-    buffer.set(new Uint8Array(dataview.buffer), offset + 1)
+    tools.writeUInt16(buffer, offset + 1, Number(n), 'LE')
 
     bytes = 3
 
-  // 32 bit
+    // 32 bit
   } else if (n <= 0xffffffff) {
-    const dataview = new DataView(new ArrayBuffer(4), 0, 4)
-    dataview.setUint32(0, n, true)
     buffer.set([0xfe], offset)
-    buffer.set(new Uint8Array(dataview.buffer), offset + 1)
+    tools.writeUInt32(buffer, offset + 1, Number(n), 'LE')
 
     bytes = 5
 
-  // 64 bit
+    // 64 bit
   } else {
-    const dataview = new DataView(new ArrayBuffer(8), 0, 8)
-    dataview.setBigUint64(0, BigInt(n), true)
-
     buffer.set([0xff], offset)
-    buffer.set(new Uint8Array(dataview.buffer), offset + 1)
+    tools.writeUInt64(buffer, offset + 1, n, 'LE')
 
     bytes = 9
   }
@@ -54,45 +56,44 @@ export function encode (n: number, buffer?: Uint8Array, offset?: number): { buff
   return { buffer, bytes }
 }
 
-export function decode (buffer: Uint8Array, offset?: number): { value: number, bytes: number } {
+export function decode (
+  buffer: Uint8Array,
+  offset?: number
+): { value: bigint, bytes: number } {
   if (offset === undefined) offset = 0
 
   const first = buffer.at(offset)
   if (first === undefined) throw new Error('buffer too small')
 
-  const dataview = new DataView(new Uint8Array(buffer).buffer)
-
   // 8 bit
   if (first < 0xfd) {
-    return { value: first, bytes: 1 }
+    return { value: BigInt(first), bytes: 1 }
 
-  // 16 bit
+    // 16 bit
   } else if (first === 0xfd) {
-    return { value: dataview.getUint16(offset + 1, true), bytes: 3 }
+    return {
+      value: BigInt(tools.readUInt16(buffer, offset + 1, 'LE')),
+      bytes: 3
+    }
 
-  // 32 bit
+    // 32 bit
   } else if (first === 0xfe) {
-    return { value: dataview.getUint32(offset + 1, true), bytes: 5 }
+    return {
+      value: BigInt(tools.readUInt32(buffer, offset + 1, 'LE')),
+      bytes: 5
+    }
 
-  // 64 bit
+    // 64 bit
   } else {
-    const number = dataview.getBigUint64(offset + 1, true)
-    checkUInt53(+number.toString())
+    const number = tools.readUInt64(buffer, offset + 1, 'LE')
+    checkUInt53(number)
 
-    return { value: +number.toString(), bytes: 9 }
+    return { value: number, bytes: 9 }
   }
 }
 
-export function encodingLength (n: number): number {
+export function encodingLength (n: bigint): number {
   checkUInt53(n)
 
-  return (
-    n < 0xfd
-      ? 1
-      : n <= 0xffff
-        ? 3
-        : n <= 0xffffffff
-          ? 5
-          : 9
-  )
+  return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9
 }

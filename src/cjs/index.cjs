@@ -1,13 +1,38 @@
-'use strict';
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.encode = encode;
 exports.decode = decode;
 exports.encodingLength = encodingLength;
+const tools = __importStar(require("uint8array-tools"));
 // Number.MAX_SAFE_INTEGER
-var MAX_SAFE_INTEGER = 9007199254740991;
+const MAX_SAFE_INTEGER = 9007199254740991;
 function checkUInt53(n) {
-    if (n < 0 || n > MAX_SAFE_INTEGER || n % 1 !== 0)
-        throw new RangeError('value out of range');
+    if (n < 0 || n > MAX_SAFE_INTEGER || n % 1n !== 0n) {
+        throw new RangeError("value out of range");
+    }
 }
 function encode(n, buffer, offset) {
     checkUInt53(n);
@@ -16,71 +41,64 @@ function encode(n, buffer, offset) {
     if (buffer === undefined) {
         buffer = new Uint8Array(encodingLength(n));
     }
-    var bytes = 0;
+    let bytes = 0;
     // 8 bit
     if (n < 0xfd) {
-        buffer.set([n], offset);
+        buffer.set([Number(n)], offset);
         bytes = 1;
         // 16 bit
     }
     else if (n <= 0xffff) {
-        var dataview = new DataView(new ArrayBuffer(2));
-        dataview.setUint16(0, n, true);
         buffer.set([0xfd], offset);
-        buffer.set(new Uint8Array(dataview.buffer), offset + 1);
+        tools.writeUInt16(buffer, offset + 1, Number(n), "LE");
         bytes = 3;
         // 32 bit
     }
     else if (n <= 0xffffffff) {
-        var dataview = new DataView(new ArrayBuffer(4), 0, 4);
-        dataview.setUint32(0, n, true);
         buffer.set([0xfe], offset);
-        buffer.set(new Uint8Array(dataview.buffer), offset + 1);
+        tools.writeUInt32(buffer, offset + 1, Number(n), "LE");
         bytes = 5;
         // 64 bit
     }
     else {
-        var dataview = new DataView(new ArrayBuffer(8), 0, 8);
-        dataview.setBigUint64(0, BigInt(n), true);
         buffer.set([0xff], offset);
-        buffer.set(new Uint8Array(dataview.buffer), offset + 1);
+        tools.writeUInt64(buffer, offset + 1, n, "LE");
         bytes = 9;
     }
-    return { buffer: buffer, bytes: bytes };
+    return { buffer, bytes };
 }
 function decode(buffer, offset) {
     if (offset === undefined)
         offset = 0;
-    var first = buffer.at(offset);
+    const first = buffer.at(offset);
     if (first === undefined)
-        throw new Error('buffer too small');
-    var dataview = new DataView(new Uint8Array(buffer).buffer);
+        throw new Error("buffer too small");
     // 8 bit
     if (first < 0xfd) {
-        return { value: first, bytes: 1 };
+        return { value: BigInt(first), bytes: 1 };
         // 16 bit
     }
     else if (first === 0xfd) {
-        return { value: dataview.getUint16(offset + 1, true), bytes: 3 };
+        return {
+            value: BigInt(tools.readUInt16(buffer, offset + 1, "LE")),
+            bytes: 3,
+        };
         // 32 bit
     }
     else if (first === 0xfe) {
-        return { value: dataview.getUint32(offset + 1, true), bytes: 5 };
+        return {
+            value: BigInt(tools.readUInt32(buffer, offset + 1, "LE")),
+            bytes: 5,
+        };
         // 64 bit
     }
     else {
-        var number = dataview.getBigUint64(offset + 1, true);
-        checkUInt53(+number.toString());
-        return { value: +number.toString(), bytes: 9 };
+        const number = tools.readUInt64(buffer, offset + 1, "LE");
+        checkUInt53(number);
+        return { value: number, bytes: 9 };
     }
 }
 function encodingLength(n) {
     checkUInt53(n);
-    return (n < 0xfd
-        ? 1
-        : n <= 0xffff
-            ? 3
-            : n <= 0xffffffff
-                ? 5
-                : 9);
+    return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9;
 }
