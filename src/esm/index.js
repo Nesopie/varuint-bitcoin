@@ -1,14 +1,6 @@
 "use strict";
 import * as tools from "uint8array-tools";
-// Number.MAX_SAFE_INTEGER
-const MAX_SAFE_INTEGER = 9007199254740991;
-function checkUInt53(n) {
-    if (n < 0 || n > MAX_SAFE_INTEGER || n % 1n !== 0n) {
-        throw new RangeError("value out of range");
-    }
-}
 export function encode(n, buffer, offset) {
-    checkUInt53(n);
     if (offset === undefined)
         offset = 0;
     if (buffer === undefined) {
@@ -67,11 +59,9 @@ export function decode(buffer, offset) {
     }
     else {
         const number = tools.readUInt64(buffer, offset + 1, "LE");
-        checkUInt53(number);
         return { value: number, bytes: 9 };
     }
 }
 export function encodingLength(n) {
-    checkUInt53(n);
     return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9;
 }
