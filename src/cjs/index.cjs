@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -29,7 +29,7 @@ exports.encodingLength = encodingLength;
 const tools = __importStar(require("uint8array-tools"));
 const checkUInt64 = (n) => {
     if (n < 0 || n > 0xffffffffffffffffn) {
-        throw new RangeError("value out of range");
+        throw new RangeError('value out of range');
     }
 };
 function encode(n, buffer, offset) {
@@ -48,19 +48,19 @@ function encode(n, buffer, offset) {
     }
     else if (n <= 0xffff) {
         buffer.set([0xfd], offset);
-        tools.writeUInt16(buffer, offset + 1, Number(n), "LE");
+        tools.writeUInt16(buffer, offset + 1, Number(n), 'LE');
         bytes = 3;
         // 32 bit
     }
     else if (n <= 0xffffffff) {
         buffer.set([0xfe], offset);
-        tools.writeUInt32(buffer, offset + 1, Number(n), "LE");
+        tools.writeUInt32(buffer, offset + 1, Number(n), 'LE');
         bytes = 5;
         // 64 bit
     }
     else {
         buffer.set([0xff], offset);
-        tools.writeUInt64(buffer, offset + 1, n, "LE");
+        tools.writeUInt64(buffer, offset + 1, n, 'LE');
         bytes = 9;
     }
     return { buffer, bytes };
@@ -70,7 +70,7 @@ function decode(buffer, offset) {
         offset = 0;
     const first = buffer.at(offset);
     if (first === undefined)
-        throw new Error("buffer too small");
+        throw new Error('buffer too small');
     // 8 bit
     if (first < 0xfd) {
         return { value: BigInt(first), bytes: 1 };
@@ -78,20 +78,20 @@ function decode(buffer, offset) {
     }
     else if (first === 0xfd) {
         return {
-            value: BigInt(tools.readUInt16(buffer, offset + 1, "LE")),
-            bytes: 3,
+            value: BigInt(tools.readUInt16(buffer, offset + 1, 'LE')),
+            bytes: 3
         };
         // 32 bit
     }
     else if (first === 0xfe) {
         return {
-            value: BigInt(tools.readUInt32(buffer, offset + 1, "LE")),
-            bytes: 5,
+            value: BigInt(tools.readUInt32(buffer, offset + 1, 'LE')),
+            bytes: 5
         };
         // 64 bit
     }
     else {
-        const number = tools.readUInt64(buffer, offset + 1, "LE");
+        const number = tools.readUInt64(buffer, offset + 1, 'LE');
         return { value: number, bytes: 9 };
     }
 }
