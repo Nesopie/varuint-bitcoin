@@ -1,6 +1,12 @@
 "use strict";
 import * as tools from "uint8array-tools";
+const checkUInt64 = (n) => {
+    if (n < 0 || n > 0xffffffffffffffffn) {
+        throw new RangeError("value out of range");
+    }
+};
 export function encode(n, buffer, offset) {
+    checkUInt64(n);
     if (offset === undefined)
         offset = 0;
     if (buffer === undefined) {
@@ -63,5 +69,6 @@ export function decode(buffer, offset) {
     }
 }
 export function encodingLength(n) {
+    checkUInt64(n);
     return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9;
 }

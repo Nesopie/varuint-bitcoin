@@ -40,15 +40,6 @@ invalid.forEach(function (fixture, i) {
         }, new RegExp(fixture.msg));
         t.end();
     });
-
-    if (fixture.hex) {
-        tape("invalid decode #" + (i + 1), function (t) {
-            t.throws(function () {
-                t.decode(decode(Buffer.from(fixture.hex, "hex")).bytes);
-            }, new RegExp(fixture.msg));
-            t.end();
-        });
-    }
 });
 
 tape("encode", function (t) {

@@ -2,11 +2,18 @@
 
 import * as tools from 'uint8array-tools'
 
+const checkUInt64 = (n: bigint): void => {
+  if (n < 0 || n > 0xffffffffffffffffn) {
+    throw new RangeError('value out of range')
+  }
+}
+
 export function encode (
   n: bigint,
   buffer?: Uint8Array,
   offset?: number
 ): { buffer: Uint8Array, bytes: number } {
+  checkUInt64(n)
   if (offset === undefined) offset = 0
 
   if (buffer === undefined) {
@@ -81,5 +88,6 @@ export function decode (
 }
 
 export function encodingLength (n: bigint): number {
+  checkUInt64(n)
   return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9
 }

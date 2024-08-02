@@ -63,8 +63,7 @@
             "msg": "^RangeError: value out of range$"
         },
         {
-            "dec": 9007199254740992,
-            "hex": "ffffffffff00002000",
+            "dec": 900719925474099213131,
             "msg": "^RangeError: value out of range$"
         }
     ]
