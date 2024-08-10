@@ -1,5 +1,5 @@
 {
-    "name": "varuint",
+    "name": "varuint-bitcoin",
     "version": "1.1.2",
     "type": "module",
     "description": "encode/decode number as bitcoin variable length integer",
