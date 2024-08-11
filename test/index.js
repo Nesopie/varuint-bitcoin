@@ -15,7 +15,7 @@ valid.forEach(function (fixture, i) {
 
     tape("valid decode #" + (i + 1), function (t) {
         const res = decode(Buffer.from(fixture.hex, "hex"));
-        if(fixture.dec <= 0xffffffff) { 
+        if(fixture.dec <= Number.MAX_SAFE_INTEGER) {            
             t.same(res.numberValue, fixture.dec);
         }else {
             t.same(res.numberValue, null);
@@ -88,6 +88,28 @@ tape("decode", function (t) {
         t.throws(function () {
             decode([], 1);
         }, new Error("buffer too small"));
+        t.end();
+    });
+
+    t.test("should return a number if it is valid", function (t) {
+        var buffer = Buffer.alloc(18);
+        buffer.writeUIntBE(0xff, 0, 1);
+        buffer.writeBigUint64LE(BigInt(Number.MAX_SAFE_INTEGER), 1);
+        const res = decode(buffer, 0);
+        t.same(res.numberValue, Number.MAX_SAFE_INTEGER);
+        t.same(res.bigintValue, BigInt(Number.MAX_SAFE_INTEGER));
+        t.same(res.bytes, 9);
+        t.end();
+    });
+
+    t.test("should return null if a number is invalid", function (t) {
+        var buffer = Buffer.alloc(18);
+        buffer.writeUIntBE(0xff, 0, 1);
+        buffer.writeBigUint64LE(BigInt(Number.MAX_SAFE_INTEGER) + 1n, 1);
+        const res = decode(buffer, 0);
+        t.same(res.numberValue, null);
+        t.same(res.bigintValue, BigInt(Number.MAX_SAFE_INTEGER) + 1n);
+        t.same(res.bytes, 9);
         t.end();
     });
 

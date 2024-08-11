@@ -79,7 +79,7 @@ export function decode(buffer, offset) {
     }
     else {
         const number = tools.readUInt64(buffer, offset + 1, 'LE');
-        return { numberValue: null, bigintValue: number, bytes: 9 };
+        return { numberValue: number <= Number.MAX_SAFE_INTEGER ? Number(number) : null, bigintValue: number, bytes: 9 };
     }
 }
 export function encodingLength(n) {
