@@ -32,8 +32,18 @@ const checkUInt64 = (n) => {
         throw new RangeError('value out of range');
     }
 };
+function checkUInt53(n) {
+    if (n < 0 || n > Number.MAX_SAFE_INTEGER || n % 1 !== 0)
+        throw new RangeError('value out of range');
+}
+function checkUint53OrUint64(n) {
+    if (typeof n === 'number')
+        checkUInt53(n);
+    else
+        checkUInt64(n);
+}
 function encode(n, buffer, offset) {
-    checkUInt64(n);
+    checkUint53OrUint64(n);
     if (offset === undefined)
         offset = 0;
     if (buffer === undefined) {
@@ -60,7 +70,7 @@ function encode(n, buffer, offset) {
     }
     else {
         buffer.set([0xff], offset);
-        tools.writeUInt64(buffer, offset + 1, n, 'LE');
+        tools.writeUInt64(buffer, offset + 1, BigInt(n), 'LE');
         bytes = 9;
     }
     return { buffer, bytes };
@@ -73,29 +83,33 @@ function decode(buffer, offset) {
         throw new Error('buffer too small');
     // 8 bit
     if (first < 0xfd) {
-        return { value: BigInt(first), bytes: 1 };
+        return { numberValue: first, bigintValue: BigInt(first), bytes: 1 };
         // 16 bit
     }
     else if (first === 0xfd) {
+        const val = tools.readUInt16(buffer, offset + 1, 'LE');
         return {
-            value: BigInt(tools.readUInt16(buffer, offset + 1, 'LE')),
+            numberValue: val,
+            bigintValue: BigInt(val),
             bytes: 3
         };
         // 32 bit
     }
     else if (first === 0xfe) {
+        const val = tools.readUInt32(buffer, offset + 1, 'LE');
         return {
-            value: BigInt(tools.readUInt32(buffer, offset + 1, 'LE')),
+            numberValue: val,
+            bigintValue: BigInt(val),
             bytes: 5
         };
         // 64 bit
     }
     else {
         const number = tools.readUInt64(buffer, offset + 1, 'LE');
-        return { value: number, bytes: 9 };
+        return { numberValue: null, bigintValue: number, bytes: 9 };
     }
 }
 function encodingLength(n) {
-    checkUInt64(n);
+    checkUint53OrUint64(n);
     return n < 0xfd ? 1 : n <= 0xffff ? 3 : n <= 0xffffffff ? 5 : 9;
 }

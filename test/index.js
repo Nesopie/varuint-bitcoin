@@ -15,13 +15,18 @@ valid.forEach(function (fixture, i) {
 
     tape("valid decode #" + (i + 1), function (t) {
         const res = decode(Buffer.from(fixture.hex, "hex"));
-        t.same(res.value, BigInt(fixture.dec));
+        if(fixture.dec <= 0xffffffff) { 
+            t.same(res.numberValue, fixture.dec);
+        }else {
+            t.same(res.numberValue, null);
+            t.same(res.bigintValue, BigInt(fixture.dec));
+        }
         t.same(res.bytes, fixture.hex.length / 2);
         t.end();
     });
 
     tape("valid encodingLength #" + (i + 1), function (t) {
-        t.same(encodingLength(BigInt(fixture.dec)), fixture.hex.length / 2);
+        t.same(encodingLength(fixture.dec), fixture.hex.length / 2);
         t.end();
     });
 });
@@ -29,7 +34,7 @@ valid.forEach(function (fixture, i) {
 invalid.forEach(function (fixture, i) {
     tape("invalid encode #" + (i + 1), function (t) {
         t.throws(function () {
-            encode(BigInt(fixture.dec));
+            encode(fixture.dec);
         }, new RegExp(fixture.msg));
         t.end();
     });
@@ -41,6 +46,22 @@ invalid.forEach(function (fixture, i) {
         t.end();
     });
 });
+
+tape("encode", function(t) {
+    t.test("should throw if number and > 53 bits", function (t) {
+        t.throws(function () {
+            encode(Number.MAX_SAFE_INTEGER + 2);
+        }, new RegExp(/value out of range/));
+        t.end();
+    })
+
+    t.test("should throw if bigint and > 64 bits", function (t) {
+        t.throws(function () {
+            encode(0xffffffffffffffffffn + 2n);
+        }, new RegExp(/value out of range/));
+        t.end();
+    })
+})
 
 tape("encode", function (t) {
     t.test("write to buffer with offset", function (t) {
@@ -58,7 +79,7 @@ tape("decode", function (t) {
     t.test("read from buffer with offset", function (t) {
         var buffer = Buffer.from([0x00, 0xfc]);
         const res = decode(buffer, 1);
-        t.same(res.value, 0xfcn);
+        t.same(res.numberValue, 0xfc);
         t.same(res.bytes, 1);
         t.end();
     });

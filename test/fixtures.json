@@ -63,6 +63,10 @@
             "msg": "^RangeError: value out of range$"
         },
         {
+            "dec": 0.1,
+            "msg": "^RangeError: value out of range$"
+        },
+        {
             "dec": 900719925474099213131,
             "msg": "^RangeError: value out of range$"
         }
